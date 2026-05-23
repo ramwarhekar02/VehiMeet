@@ -11,6 +11,22 @@ const {
   updateCustomerProfile,
 } = require("../services/booking.service");
 
+const toCustomerProfileResponse = ({ user, profile }) => ({
+  user: {
+    id: user.id,
+    role: user.role,
+    fullName: user.fullName,
+    email: user.email,
+    phone: user.phone,
+  },
+  profile: {
+    id: profile.id,
+    defaultPickupAddresses: profile.defaultPickupAddresses,
+    emergencyContact: profile.emergencyContact,
+    kycStatus: profile.kycStatus,
+  },
+});
+
 const getProfile = async (req, res) => {
   const profile = await CustomerProfile.findOne({ userId: req.user.id });
   if (!profile) {
@@ -18,26 +34,17 @@ const getProfile = async (req, res) => {
   }
   return sendSuccess(res, {
     message: "Customer profile fetched",
-    data: {
-      user: {
-        id: req.user.id,
-        fullName: req.user.fullName,
-        email: req.user.email,
-        phone: req.user.phone,
-        role: req.user.role,
-      },
-      profile,
-    },
+    data: toCustomerProfileResponse({ user: req.user, profile }),
   });
 };
 
 const updateProfile = async (req, res) => {
   const payload = profileUpdateSchema.parse(req.body);
-  const data = await updateCustomerProfile({
+  await updateCustomerProfile({
     userId: req.user.id,
     ...payload,
   });
-  return sendSuccess(res, { message: "Customer profile updated", data });
+  return sendSuccess(res, { message: "Customer profile updated", data: null });
 };
 
 const getBookings = async (req, res) =>

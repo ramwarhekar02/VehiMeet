@@ -19,17 +19,57 @@ const {
 const { recordLocation } = require("../services/tracking.service");
 const { upsertPartnerVehicle } = require("../services/vehicle.service");
 
+const toPartnerUserResponse = (user) => ({
+  id: user.id,
+  role: user.role,
+  fullName: user.fullName,
+  email: user.email,
+  phone: user.phone,
+  avatarUrl: user.avatarUrl,
+});
+
+const toPartnerProfileResponse = (profile) => ({
+  id: profile.id,
+  status: profile.status,
+  licenseNumber: profile.licenseNumber,
+  serviceAreas: profile.serviceAreas,
+  approvedByAdmin: profile.approvedByAdmin,
+  videoKycRequested: profile.videoKycRequested,
+  reviewMessage: profile.reviewMessage,
+  identityDocs: profile.identityDocs,
+  identityDocDetails: profile.identityDocDetails,
+});
+
+const toPartnerVehicleResponse = (vehicle) => {
+  if (!vehicle) return null;
+  return {
+    id: vehicle.id,
+    categoryId: vehicle.categoryId,
+    brand: vehicle.brand,
+    model: vehicle.model,
+    plateNumber: vehicle.plateNumber,
+    seats: vehicle.seats,
+    fuelType: vehicle.fuelType,
+    color: vehicle.color,
+    images: vehicle.images,
+    documents: vehicle.documents,
+    documentDetails: vehicle.documentDetails,
+    approvalStatus: vehicle.approvalStatus,
+  };
+};
+
 const getProfile = async (req, res) => {
   const profile = await PartnerProfile.findOne({ userId: req.user.id });
   if (!profile) {
     throw new ApiError(404, "Partner profile not found", "PARTNER_PROFILE_NOT_FOUND");
   }
+  const vehicle = profile?.vehicleId ? await Vehicle.findById(profile.vehicleId) : null;
   return sendSuccess(res, {
     message: "Partner profile fetched",
     data: {
-      user: req.user,
-      profile,
-      vehicle: profile?.vehicleId ? await Vehicle.findById(profile.vehicleId) : null,
+      user: toPartnerUserResponse(req.user),
+      profile: toPartnerProfileResponse(profile),
+      vehicle: toPartnerVehicleResponse(vehicle),
     },
   });
 };
@@ -71,10 +111,7 @@ const updateProfile = async (req, res) => {
   await Promise.all([user.save(), profile.save()]);
   return sendSuccess(res, {
     message: "Partner profile submitted for admin review",
-    data: {
-      user,
-      profile,
-    },
+    data: null,
   });
 };
 
@@ -89,21 +126,22 @@ const updateStatus = async (req, res) => {
   }
   profile.status = payload.status;
   await profile.save();
-  return sendSuccess(res, { message: "Partner status updated", data: profile });
+  return sendSuccess(res, { message: "Partner status updated", data: null });
 };
 
 const upsertVehicle = async (req, res) => {
   const payload = partnerVehicleUpsertSchema.parse(req.body);
+  await upsertPartnerVehicle({ partnerId: req.user.id, payload });
   return sendSuccess(res, {
     message: "Vehicle submitted for admin review",
-    data: await upsertPartnerVehicle({ partnerId: req.user.id, payload }),
+    data: null,
   });
 };
 
 const updateLocation = async (req, res) => {
   const payload = partnerLocationSchema.parse(req.body);
-  const location = await recordLocation({ ...payload, partnerId: req.user.id });
-  return sendSuccess(res, { statusCode: 201, message: "Partner location updated", data: location });
+  await recordLocation({ ...payload, partnerId: req.user.id });
+  return sendSuccess(res, { statusCode: 201, message: "Partner location updated", data: null });
 };
 
 const getAssignedBookings = async (req, res) =>
