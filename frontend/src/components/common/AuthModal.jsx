@@ -31,12 +31,17 @@ export const AuthModal = ({ mode = 'login', onClose, onSwitch }) => {
     event.preventDefault()
     setSubmitting(true)
     setAuthError('')
+    const payload = isLogin ? loginForm : registerForm
+    setLoginForm((current) => ({ ...current, password: '' }))
+    setRegisterForm((current) => ({ ...current, password: '' }))
+    setShowLoginPassword(false)
+    setShowRegisterPassword(false)
 
     try {
       if (isLogin) {
-        await login(loginForm)
+        await login(payload)
       } else {
-        await register(registerForm)
+        await register(payload)
       }
       setLoginForm(createEmptyLoginForm())
       setRegisterForm(createEmptyRegisterForm())

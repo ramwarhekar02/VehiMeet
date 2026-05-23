@@ -73,7 +73,8 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (credentials) => {
     setAuthError('')
-    const user = await authService.login(credentials)
+    await authService.login(credentials)
+    const user = await authService.me()
 
     setSession({ user })
     showToast('Logged in successfully.')
@@ -83,7 +84,8 @@ export const AuthProvider = ({ children }) => {
 
   const register = async (payload) => {
     setAuthError('')
-    const user = await authService.register(payload)
+    await authService.register(payload)
+    const user = await authService.me()
     setSession({ user })
     showToast('Account created and logged in successfully.')
     navigate(resolvePostAuthPath(user.role), { replace: true })

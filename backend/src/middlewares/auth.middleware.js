@@ -13,6 +13,16 @@ const requireAuth = async (req, _res, next) => {
     : null;
 
   const token = tokenFromCookie || tokenFromHeader;
+  return verifyRequestToken({ req, next, token });
+};
+
+const requireCookieAuth = async (req, _res, next) => {
+  const cookieName = process.env.AUTH_COOKIE_NAME || "vehimeet_auth";
+  const token = req.cookies?.[cookieName];
+  return verifyRequestToken({ req, next, token });
+};
+
+const verifyRequestToken = async ({ req, next, token }) => {
   if (!token) {
     return next(new ApiError(401, "Authentication token is required", "AUTH_REQUIRED"));
   }
@@ -42,5 +52,4 @@ const requireRole = (...roles) => (req, _res, next) => {
   return next();
 };
 
-module.exports = { requireAuth, requireRole };
-
+module.exports = { requireAuth, requireCookieAuth, requireRole };

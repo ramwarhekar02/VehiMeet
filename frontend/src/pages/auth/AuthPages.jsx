@@ -75,8 +75,11 @@ export const LoginPage = () => {
     event.preventDefault()
     setSubmitting(true)
     setAuthError('')
+    const payload = form
+    setForm((current) => ({ ...current, password: '' }))
+    setShowPassword(false)
     try {
-      await login(form)
+      await login(payload)
     } catch (err) {
       setAuthError(err.message)
     } finally {
@@ -119,8 +122,11 @@ export const RegisterPage = () => {
     event.preventDefault()
     setSubmitting(true)
     setAuthError('')
+    const payload = form
+    setForm((current) => ({ ...current, password: '' }))
+    setShowPassword(false)
     try {
-      await register(form)
+      await register(payload)
     } catch (err) {
       setAuthError(err.message)
     } finally {

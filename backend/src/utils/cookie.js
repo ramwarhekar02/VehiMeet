@@ -9,7 +9,7 @@ const isProd = () => process.env.NODE_ENV === 'production'
 
 const getCookieOptions = ({ maxAgeMs, cookieName }) => {
   const secure = isProd()
-  const sameSite = process.env.COOKIE_SAMESITE || 'lax'
+  const sameSite = process.env.COOKIE_SAMESITE || (secure ? 'none' : 'lax')
   return {
     httpOnly: true,
     secure,
@@ -26,10 +26,11 @@ const getCookieParseOptions = () => {
 
 
 const clearCookieOptions = () => {
+  const secure = isProd()
   return {
     httpOnly: true,
-    secure: isProd(),
-    sameSite: process.env.COOKIE_SAMESITE || 'lax',
+    secure,
+    sameSite: process.env.COOKIE_SAMESITE || (secure ? 'none' : 'lax'),
     path: '/',
     maxAge: 0,
   }

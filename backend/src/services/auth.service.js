@@ -15,12 +15,17 @@ const sanitizeUser = (user) => {
   return safeUser;
 };
 
+const toSessionUser = (user) => ({
+  id: user.id,
+  role: user.role,
+  fullName: user.fullName,
+});
+
 const issueToken = (user) =>
   jwt.sign(
     {
       sub: user.id,
       role: user.role,
-      email: user.email,
       type: 'access',
     },
     jwtSecret,
@@ -125,7 +130,7 @@ const registerUser = async ({ fullName, email, phone, password, role = ROLES.CUS
   setRefreshCookie(res, user);
 
   return {
-    user: sanitizeUser(user),
+    user: toSessionUser(user),
   };
 };
 
@@ -159,7 +164,7 @@ const registerAdmin = async ({ fullName, email, phone, password, secret }, res) 
   setRefreshCookie(res, user);
 
   return {
-    user: sanitizeUser(user),
+    user: toSessionUser(user),
   };
 };
 
@@ -173,7 +178,7 @@ const refreshSession = async ({ userId }, res) => {
   setRefreshCookie(res, user);
 
   return {
-    user: sanitizeUser(user),
+    user: toSessionUser(user),
   };
 };
 
@@ -196,12 +201,13 @@ const login = async ({ email, password }, res) => {
   setRefreshCookie(res, user);
 
   return {
-    user: sanitizeUser(user),
+    user: toSessionUser(user),
   };
 };
 
 module.exports = {
   sanitizeUser,
+  toSessionUser,
   issueToken,
   registerUser,
   registerAdmin,
