@@ -16,7 +16,6 @@ export const VehicleOverviewCard = ({ vehicle, showDetailsLink = true }) => (
       <p>Seats: {vehicle.seats}</p>
       <p>Fuel: {vehicle.fuelType}</p>
       <p>Color: {vehicle.color}</p>
-      <p>Plate: {vehicle.plateNumber}</p>
       <p>Base fare: Rs. {vehicle.category?.baseFare}</p>
       <p>Per km: Rs. {vehicle.category?.perKmRate}</p>
     </div>

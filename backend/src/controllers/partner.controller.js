@@ -118,35 +118,30 @@ const getBroadcastBookings = async (_req, res) =>
     data: await listOpenPartnerBroadcastBookings(),
   });
 
-const acceptAssignedBooking = async (req, res) =>
-  sendSuccess(res, {
-    message: "Booking accepted",
-    data: await acceptBooking({ bookingId: req.params.id, partnerId: req.user.id }),
-  });
+const acceptAssignedBooking = async (req, res) => {
+  await acceptBooking({ bookingId: req.params.id, partnerId: req.user.id });
+  return sendSuccess(res, { message: "Booking accepted", data: null });
+};
 
-const rejectAssignedBooking = async (req, res) =>
-  sendSuccess(res, {
-    message: "Booking sent back to dispatch queue",
-    data: await rejectBooking({ bookingId: req.params.id, partnerId: req.user.id }),
-  });
+const rejectAssignedBooking = async (req, res) => {
+  await rejectBooking({ bookingId: req.params.id, partnerId: req.user.id });
+  return sendSuccess(res, { message: "Booking sent back to dispatch queue", data: null });
+};
 
-const startAssignedTrip = async (req, res) =>
-  sendSuccess(res, {
-    message: "Trip started",
-    data: await startTrip({ bookingId: req.params.id, partnerId: req.user.id }),
-  });
+const startAssignedTrip = async (req, res) => {
+  await startTrip({ bookingId: req.params.id, partnerId: req.user.id });
+  return sendSuccess(res, { message: "Trip started", data: null });
+};
 
-const markArrivedAtPickup = async (req, res) =>
-  sendSuccess(res, {
-    message: "Partner arrived at pickup",
-    data: await arriveAtPickup({ bookingId: req.params.id, partnerId: req.user.id }),
-  });
+const markArrivedAtPickup = async (req, res) => {
+  await arriveAtPickup({ bookingId: req.params.id, partnerId: req.user.id });
+  return sendSuccess(res, { message: "Partner arrived at pickup", data: null });
+};
 
-const completeAssignedTrip = async (req, res) =>
-  sendSuccess(res, {
-    message: "Trip completed",
-    data: await completeTrip({ bookingId: req.params.id, partnerId: req.user.id }),
-  });
+const completeAssignedTrip = async (req, res) => {
+  await completeTrip({ bookingId: req.params.id, partnerId: req.user.id });
+  return sendSuccess(res, { message: "Trip completed", data: null });
+};
 
 module.exports = {
   getProfile,

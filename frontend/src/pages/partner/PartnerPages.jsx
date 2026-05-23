@@ -490,7 +490,6 @@ const PartnerBookingBroadcastPopup = ({ booking, onClose }) => {
                 <div className='mt-6 grid gap-3 text-sm text-white/78'>
                   <p><span className='font-semibold text-white'>Duration:</span> {booking.routeInfo?.estimatedDurationMin ?? '--'} min</p>
                   <p><span className='font-semibold text-white'>Vehicle:</span> {booking.vehicleSnapshot?.brand} {booking.vehicleSnapshot?.model}</p>
-                  <p><span className='font-semibold text-white'>Customer email:</span> {formatText(booking.customer?.email, 'Hidden')}</p>
                 </div>
               </div>
               <p className='mt-5 text-sm leading-6 text-white/65'>

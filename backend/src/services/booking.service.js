@@ -30,6 +30,43 @@ const fareFromCategory = (category, distanceKm, durationMin) => {
 
 const mapDocument = (doc) => (doc?.toObject ? doc.toObject() : doc);
 
+const toBookingUser = (user) =>
+  user
+    ? {
+        id: user.id,
+        _id: user._id,
+        fullName: user.fullName,
+      }
+    : null;
+
+const toBookingVehicle = (vehicle) => {
+  if (!vehicle) return null;
+  const source = mapDocument(vehicle);
+  return {
+    id: source.id || source._id,
+    _id: source._id,
+    brand: source.brand,
+    model: source.model,
+    seats: source.seats,
+    fuelType: source.fuelType,
+    color: source.color,
+    images: source.images || [],
+  };
+};
+
+const toBookingKycSession = (kycSession) => {
+  if (!kycSession) return null;
+  const source = mapDocument(kycSession);
+  return {
+    id: source.id || source._id,
+    _id: source._id,
+    status: source.status,
+    reviewStatus: source.reviewStatus,
+    createdAt: source.createdAt,
+    updatedAt: source.updatedAt,
+  };
+};
+
 const getBookingDetails = async (bookingInput) => {
   const booking = mapDocument(bookingInput);
   const [customer, partner, vehicle, kycSession] = await Promise.all([
@@ -41,24 +78,10 @@ const getBookingDetails = async (bookingInput) => {
 
   return {
     ...booking,
-    customer: customer
-      ? {
-          id: customer.id,
-          _id: customer._id,
-          fullName: customer.fullName,
-          email: customer.email,
-        }
-      : null,
-    partner: partner
-      ? {
-          id: partner.id,
-          _id: partner._id,
-          fullName: partner.fullName,
-          email: partner.email,
-        }
-      : null,
-    vehicle: mapDocument(vehicle),
-    kycSession: mapDocument(kycSession),
+    customer: toBookingUser(customer),
+    partner: toBookingUser(partner),
+    vehicle: toBookingVehicle(vehicle),
+    kycSession: toBookingKycSession(kycSession),
   };
 };
 

@@ -10,6 +10,41 @@ const hydrateVehicle = async (vehicle) => {
   };
 };
 
+const toPublicCategory = (category) => {
+  if (!category) return null;
+  const source = category.toObject ? category.toObject() : category;
+  return {
+    id: source.id || source._id,
+    _id: source._id,
+    name: source.name,
+    description: source.description,
+    baseFare: source.baseFare,
+    perKmRate: source.perKmRate,
+    perMinuteRate: source.perMinuteRate,
+    capacity: source.capacity,
+    imageUrl: source.imageUrl,
+  };
+};
+
+const toPublicVehicle = (vehicle) => {
+  if (!vehicle) return null;
+  const source = vehicle.toObject ? vehicle.toObject() : vehicle;
+  return {
+    id: source.id || source._id,
+    _id: source._id,
+    categoryId: source.categoryId,
+    brand: source.brand,
+    model: source.model,
+    seats: source.seats,
+    fuelType: source.fuelType,
+    color: source.color,
+    images: source.images || [],
+    approvalStatus: source.approvalStatus,
+    pricingSnapshot: source.pricingSnapshot,
+    category: toPublicCategory(source.category),
+  };
+};
+
 const isVehicleCustomerVisible = async (vehicle) => {
   if (!vehicle || !vehicle.isActive || vehicle.approvalStatus !== "APPROVED" || !vehicle.partnerId) {
     return false;
@@ -32,15 +67,19 @@ const listVehicles = async () => {
     }
   }
 
-  return Promise.all(visibleVehicles.map(hydrateVehicle));
+  const hydrated = await Promise.all(visibleVehicles.map(hydrateVehicle));
+  return hydrated.map(toPublicVehicle);
 };
 
-const listVehicleCategories = async () => VehicleCategory.find({ isActive: true }).sort({ name: 1 });
+const listVehicleCategories = async () => {
+  const categories = await VehicleCategory.find({ isActive: true }).sort({ name: 1 });
+  return categories.map(toPublicCategory);
+};
 
 const getVehicleById = async (vehicleId) => {
   const vehicle = await Vehicle.findById(vehicleId);
   if (!vehicle || !(await isVehicleCustomerVisible(vehicle))) return null;
-  return hydrateVehicle(vehicle);
+  return toPublicVehicle(await hydrateVehicle(vehicle));
 };
 
 const upsertPartnerVehicle = async ({ partnerId, payload }) => {
@@ -112,4 +151,5 @@ module.exports = {
   getVehicleById,
   upsertPartnerVehicle,
   isVehicleCustomerVisible,
+  toPublicVehicle,
 };

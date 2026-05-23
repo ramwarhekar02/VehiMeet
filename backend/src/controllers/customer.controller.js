@@ -48,8 +48,8 @@ const getBookings = async (req, res) =>
 
 const createNewBooking = async (req, res) => {
   const payload = bookingSchema.parse(req.body);
-  const booking = await createBooking({ customerId: req.user.id, ...payload });
-  return sendSuccess(res, { statusCode: 201, message: "Booking created", data: booking });
+  await createBooking({ customerId: req.user.id, ...payload });
+  return sendSuccess(res, { statusCode: 201, message: "Booking created", data: null });
 };
 
 const getBooking = async (req, res) => {
@@ -65,14 +65,12 @@ const cancelCustomerBooking = async (req, res) => {
   if (booking.customerId !== req.user.id) {
     throw new ApiError(403, "This booking does not belong to you", "BOOKING_FORBIDDEN");
   }
-  return sendSuccess(res, {
-    message: "Booking cancelled",
-    data: await cancelBooking({
+  await cancelBooking({
       bookingId: req.params.id,
       actorRole: "customer",
       reason: req.body.reason,
-    }),
-  });
+    });
+  return sendSuccess(res, { message: "Booking cancelled", data: null });
 };
 
 module.exports = {

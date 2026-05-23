@@ -286,7 +286,6 @@ export const VehicleDetailPage = () => {
           <p className='text-lg font-semibold text-white'>{vehicle.category?.name}</p>
           <p className='mt-2'>{vehicle.category?.description}</p>
           <div className='mt-4 space-y-2'>
-            <p>Plate number: {vehicle.plateNumber}</p>
             <p>Seats: {vehicle.seats}</p>
             <p>Fuel: {vehicle.fuelType}</p>
             <p>Color: {vehicle.color}</p>

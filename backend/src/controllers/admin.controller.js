@@ -99,10 +99,8 @@ const updatePartnerByAdmin = async (req, res) => {
 
 const assignBooking = async (req, res) => {
   const payload = assignPartnerSchema.parse(req.body);
-  return sendSuccess(res, {
-    message: "Partner assigned",
-    data: await assignPartner({ bookingId: req.params.id, partnerId: payload.partnerId }),
-  });
+  await assignPartner({ bookingId: req.params.id, partnerId: payload.partnerId });
+  return sendSuccess(res, { message: "Partner assigned", data: null });
 };
 
 module.exports = {
