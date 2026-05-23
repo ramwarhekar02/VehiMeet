@@ -32,7 +32,7 @@ const seedDatabase = async () => {
     await AuditLog.insertMany(seed.auditLogs);
   }
 
-  console.log("MongoDB seeded with VehiMeet starter data");
+  console.log("MongoDB seeded");
 };
 
 module.exports = { seedDatabase };
