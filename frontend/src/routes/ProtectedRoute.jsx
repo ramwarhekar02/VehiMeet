@@ -3,8 +3,12 @@ import { roleHomeMap } from '../contexts/auth-context'
 import { useAuth } from '../contexts/useAuth'
 
 export const ProtectedRoute = ({ allow, children }) => {
-  const { isAuthenticated, user } = useAuth()
+  const { isAuthenticated, isAuthReady, user } = useAuth()
   const location = useLocation()
+
+  if (!isAuthReady) {
+    return null
+  }
 
   if (!isAuthenticated) {
     const redirect = encodeURIComponent(`${location.pathname}${location.search}`)

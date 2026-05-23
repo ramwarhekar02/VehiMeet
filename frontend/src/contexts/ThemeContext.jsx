@@ -1,26 +1,12 @@
 import { useEffect, useState } from 'react'
-import { THEME_STORAGE_KEY, ThemeContext } from './theme-context'
-
-const getInitialTheme = () => {
-  try {
-    return localStorage.getItem(THEME_STORAGE_KEY) || 'dark'
-  } catch {
-    return 'dark'
-  }
-}
+import { ThemeContext } from './theme-context'
 
 export const ThemeProvider = ({ children }) => {
-  const [theme, setTheme] = useState(getInitialTheme)
+  const [theme, setTheme] = useState('dark')
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme
     document.body.dataset.theme = theme
-
-    try {
-      localStorage.setItem(THEME_STORAGE_KEY, theme)
-    } catch {
-      // noop
-    }
   }, [theme])
 
   const toggleTheme = () => {

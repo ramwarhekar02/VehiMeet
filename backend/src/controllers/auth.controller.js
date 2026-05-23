@@ -1,35 +1,30 @@
 const { registerSchema, loginSchema, adminBootstrapSchema } = require("../validations/auth.validation");
-const { registerUser, registerAdmin, login, refreshSession } = require("../services/auth.service.secure");
+const { registerUser, registerAdmin, login, refreshSession, sanitizeUser } = require("../services/auth.service");
+const { authCookieName, refreshCookieName } = require("../config/security");
+const { clearCookieOptions } = require("../utils/cookie");
 const { sendSuccess } = require("../utils/response");
 
 const register = async (req, res) => {
   const payload = registerSchema.parse(req.body);
-  const data = await registerUser(payload, res);
-  // Token is stored via HttpOnly cookie by the service.
-  // Return only non-sensitive user info.
-  return sendSuccess(res, { statusCode: 201, message: "Account created", data });
+  const result = await registerUser(payload, res);
+  return sendSuccess(res, { statusCode: 201, message: "Account created", data: result.user });
 };
 
 const bootstrapAdmin = async (req, res) => {
   const payload = adminBootstrapSchema.parse(req.body);
-  const data = await registerAdmin(payload, res);
-  return sendSuccess(res, { statusCode: 201, message: "Admin account created", data });
+  const result = await registerAdmin(payload, res);
+  return sendSuccess(res, { statusCode: 201, message: "Admin account created", data: result.user });
 };
 
 const signIn = async (req, res) => {
   const payload = loginSchema.parse(req.body);
-  const data = await login(payload, res);
-  return sendSuccess(res, { message: "Login successful", data });
+  const result = await login(payload, res);
+  return sendSuccess(res, { message: "Login successful", data: result.user });
 };
 
 const logout = async (_req, res) => {
-  const cookieName = process.env.AUTH_COOKIE_NAME || "vehimeet_auth";
-  res.clearCookie(cookieName, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: process.env.COOKIE_SAMESITE || "lax",
-    path: "/",
-  });
+  res.clearCookie(authCookieName, clearCookieOptions());
+  res.clearCookie(refreshCookieName, clearCookieOptions());
 
   return sendSuccess(res, {
     message: "Logout completed",
@@ -38,12 +33,13 @@ const logout = async (_req, res) => {
 };
 
 const refresh = async (req, res) => {
-  const data = await refreshSession({ userId: req.user.id }, res);
+  const result = await refreshSession({ userId: req.user.id }, res);
   return sendSuccess(res, {
     message: "Session refreshed",
-    data,
+    data: result.user,
   });
 };
 
-module.exports = { register, bootstrapAdmin, signIn, logout, refresh };
+const me = async (req, res) => sendSuccess(res, { message: "Session active", data: sanitizeUser(req.user) });
 
+module.exports = { register, bootstrapAdmin, signIn, logout, refresh, me };

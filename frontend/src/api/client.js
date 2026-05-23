@@ -3,7 +3,7 @@ export const SOCKET_BASE_URL =
   import.meta.env.VITE_SOCKET_BASE_URL || API_BASE_URL.replace(/\/api\/?$/, '')
 export const SESSION_EXPIRED_EVENT = 'vehimeet:session-expired'
 
-const buildHeaders = (token, hasJson = true) => {
+const buildHeaders = (_token, hasJson = true) => {
   const headers = {}
 
   if (hasJson) {
@@ -28,10 +28,11 @@ export class ApiClientError extends Error {
 }
 
 const request = async (path, options = {}) => {
+  const { suppressSessionExpired = false, ...fetchOptions } = options
   let response
 
   try {
-    response = await fetch(`${API_BASE_URL}${path}`, { credentials: 'include', ...options })
+    response = await fetch(`${API_BASE_URL}${path}`, { credentials: 'include', ...fetchOptions })
   } catch {
     throw new ApiClientError(
       `Unable to connect to the backend at ${API_BASE_URL}. Make sure the backend server is running.`,
@@ -45,6 +46,7 @@ const request = async (path, options = {}) => {
 
   if (!response.ok || payload.success === false) {
     if (
+      !suppressSessionExpired &&
       response.status === 401 &&
       ['INVALID_TOKEN', 'SESSION_INVALID', 'AUTH_REQUIRED'].includes(payload.code)
     ) {
@@ -71,27 +73,31 @@ const request = async (path, options = {}) => {
 export const apiClient = {
   // All calls include cookies for cookie-based auth.
 
-  get: (path, token) =>
+  get: (path, token, options = {}) =>
     request(path, {
       method: 'GET',
       headers: buildHeaders(token, false),
+      ...options,
     }),
-  post: (path, body, token) =>
+  post: (path, body, token, options = {}) =>
     request(path, {
       method: 'POST',
       headers: buildHeaders(token),
       body: JSON.stringify(body ?? {}),
+      ...options,
     }),
-  patch: (path, body, token) =>
+  patch: (path, body, token, options = {}) =>
     request(path, {
       method: 'PATCH',
       headers: buildHeaders(token),
       body: JSON.stringify(body ?? {}),
+      ...options,
     }),
-  put: (path, body, token) =>
+  put: (path, body, token, options = {}) =>
     request(path, {
       method: 'PUT',
       headers: buildHeaders(token),
       body: JSON.stringify(body ?? {}),
+      ...options,
     }),
 }

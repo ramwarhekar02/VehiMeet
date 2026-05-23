@@ -1,6 +1,7 @@
 const express = require("express");
 const jwt = require("jsonwebtoken");
 const { jwtSecret } = require("../config/env");
+const { authCookieName } = require("../config/security");
 const { realtimeBus } = require("../lib/realtime");
 const { User } = require("../models");
 const { ApiError } = require("../utils/ApiError");
@@ -10,7 +11,7 @@ const router = express.Router();
 
 const authenticateStream = async (req, _res, next) => {
   const header = req.headers.authorization || "";
-  const token = header.startsWith("Bearer ") ? header.slice(7) : req.query.token;
+  const token = req.cookies?.[authCookieName] || (header.startsWith("Bearer ") ? header.slice(7) : req.query.token);
 
   if (!token) {
     return next(new ApiError(401, "Authentication required", "AUTH_REQUIRED"));

@@ -19,7 +19,6 @@ const REQUIRED_IDENTITY_DOCS = [
   { key: 'profilePhoto', label: 'Profile Photo' },
 ]
 
-const PARTNER_BROADCAST_DISMISS_KEY = 'vehimeet-partner-broadcast-dismissed'
 const HISTORY_STATUSES = ['ASSIGNED', 'PARTNER_EN_ROUTE', 'ARRIVED', 'TRIP_STARTED', 'TRIP_COMPLETED', 'CANCELLED_BY_PARTNER', 'CANCELLED_BY_ADMIN', 'CANCELLED_BY_USER']
 const REQUIRED_VEHICLE_DOCS = [
   { key: 'registrationCertificate', label: 'Registration Certificate' },
@@ -124,14 +123,6 @@ const usePartnerBroadcastBooking = (token) => {
   const dismissedRef = useRef('')
 
   useEffect(() => {
-    try {
-      dismissedRef.current = sessionStorage.getItem(PARTNER_BROADCAST_DISMISS_KEY) || ''
-    } catch {
-      dismissedRef.current = ''
-    }
-  }, [])
-
-  useEffect(() => {
     if (!token) {
       return undefined
     }
@@ -165,11 +156,6 @@ const usePartnerBroadcastBooking = (token) => {
 
   const dismissBooking = (bookingId) => {
     dismissedRef.current = bookingId
-    try {
-      sessionStorage.setItem(PARTNER_BROADCAST_DISMISS_KEY, bookingId)
-    } catch {
-      // noop
-    }
     setBooking(null)
   }
 

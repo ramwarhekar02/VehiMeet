@@ -3,6 +3,7 @@ const { Server } = require("socket.io");
 const { jwtSecret, clientOrigin } = require("../config/env");
 const { User, PartnerProfile } = require("../models");
 const { PARTNER_STATUS } = require("../constants/statuses");
+const { authCookieName } = require("../config/security");
 
 let io = null;
 
@@ -20,8 +21,23 @@ const joinDefaultRooms = (socket) => {
   }
 };
 
+const getCookieValue = (cookieHeader, name) => {
+  if (!cookieHeader) return null;
+
+  const cookies = cookieHeader.split(";");
+  for (const cookie of cookies) {
+    const [rawKey, ...rawValue] = cookie.trim().split("=");
+    if (rawKey === name) {
+      return decodeURIComponent(rawValue.join("="));
+    }
+  }
+
+  return null;
+};
+
 const authenticateSocket = async (socket, next) => {
   const token =
+    getCookieValue(socket.handshake.headers?.cookie, authCookieName) ||
     socket.handshake.auth?.token ||
     socket.handshake.headers?.authorization?.replace(/^Bearer\s+/i, "");
 

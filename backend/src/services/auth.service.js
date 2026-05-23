@@ -81,7 +81,6 @@ const setAuthCookie = (res, user) => {
     token,
     getCookieOptions({ maxAgeMs: authCookieMaxAgeMs, cookieName: authCookieName }),
   );
-  return token;
 };
 
 const setRefreshCookie = (res, user) => {
@@ -91,7 +90,6 @@ const setRefreshCookie = (res, user) => {
     refreshToken,
     getCookieOptions({ maxAgeMs: refreshCookieMaxAgeMs, cookieName: refreshCookieName }),
   );
-  return refreshToken;
 };
 
 const registerUser = async ({ fullName, email, phone, password, role = ROLES.CUSTOMER }, res) => {
@@ -122,13 +120,12 @@ const registerUser = async ({ fullName, email, phone, password, role = ROLES.CUS
 
   await createRoleProfile({ user, role: normalizedRole, now });
 
-  const token = setAuthCookie(res, user);
+  setAuthCookie(res, user);
   // set long-lived refresh cookie
   setRefreshCookie(res, user);
 
   return {
     user: sanitizeUser(user),
-    token,
   };
 };
 
@@ -158,12 +155,11 @@ const registerAdmin = async ({ fullName, email, phone, password, secret }, res) 
     phoneVerified: false,
   });
 
-  const token = setAuthCookie(res, user);
+  setAuthCookie(res, user);
   setRefreshCookie(res, user);
 
   return {
     user: sanitizeUser(user),
-    token,
   };
 };
 
@@ -173,12 +169,11 @@ const refreshSession = async ({ userId }, res) => {
     throw new ApiError(403, "This account is not active", "ACCOUNT_DISABLED");
   }
 
-  const token = setAuthCookie(res, user);
+  setAuthCookie(res, user);
   setRefreshCookie(res, user);
 
   return {
     user: sanitizeUser(user),
-    token,
   };
 };
 
@@ -197,12 +192,11 @@ const login = async ({ email, password }, res) => {
     throw new ApiError(403, "This account is not active", "ACCOUNT_DISABLED");
   }
 
-  const token = setAuthCookie(res, user);
+  setAuthCookie(res, user);
   setRefreshCookie(res, user);
 
   return {
     user: sanitizeUser(user),
-    token,
   };
 };
 
@@ -214,4 +208,3 @@ module.exports = {
   refreshSession,
   login,
 };
-

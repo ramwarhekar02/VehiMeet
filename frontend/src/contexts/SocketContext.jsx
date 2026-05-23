@@ -5,17 +5,17 @@ import { useAuth } from './useAuth'
 import { SocketContext } from './socket-context'
 
 export const SocketProvider = ({ children }) => {
-  const { token, user, showToast } = useAuth()
+  const { isAuthenticated, user, showToast } = useAuth()
   const [socket, setSocket] = useState(null)
   const [connected, setConnected] = useState(false)
 
   useEffect(() => {
-    if (!token) {
+    if (!isAuthenticated) {
       return undefined
     }
 
     const nextSocket = io(SOCKET_BASE_URL, {
-      auth: { token },
+      withCredentials: true,
       transports: ['websocket', 'polling'],
     })
 
@@ -43,15 +43,15 @@ export const SocketProvider = ({ children }) => {
       nextSocket.off('connect_error', handleConnectError)
       nextSocket.disconnect()
     }
-  }, [showToast, token, user?.role])
+  }, [isAuthenticated, showToast, user?.role])
 
   const value = useMemo(
     () => ({
-      socket: token ? socket : null,
+      socket: isAuthenticated ? socket : null,
       connected,
-      emit: (...args) => (token ? socket?.emit(...args) : undefined),
+      emit: (...args) => (isAuthenticated ? socket?.emit(...args) : undefined),
     }),
-    [connected, socket, token],
+    [connected, isAuthenticated, socket],
   )
 
   return <SocketContext.Provider value={value}>{children}</SocketContext.Provider>
