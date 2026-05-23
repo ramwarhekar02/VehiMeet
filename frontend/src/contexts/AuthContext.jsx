@@ -9,11 +9,30 @@ export const AuthProvider = ({ children }) => {
   const location = useLocation()
 
   const [session, setSession] = useState(null) // { user }
+  const [token, setToken] = useState(() => {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY)
+      if (!raw) return ''
+      const parsed = JSON.parse(raw)
+      return parsed?.token || ''
+    } catch {
+      return ''
+    }
+  })
   const [authError, setAuthError] = useState('')
   const [toast, setToast] = useState(null)
 
-  // Cookie-based auth: do not store JWT/token in sessionStorage.
-  useEffect(() => {}, [])
+  // Restore session from localStorage (JWT-based auth)
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY)
+      if (!raw) return
+      const parsed = JSON.parse(raw)
+      if (parsed?.user) setSession({ user: parsed.user })
+    } catch {
+      // noop
+    }
+  }, [])
 
   useEffect(() => {
     if (!toast) return
@@ -48,16 +67,28 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (credentials) => {
     setAuthError('')
-    const data = await authService.login(credentials) // { user }
+    const data = await authService.login(credentials) // { user, token }
     setSession({ user: data.user })
+    setToken(data.token || '')
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ user: data.user, token: data.token }))
+    } catch {
+      // noop
+    }
     showToast(`Logged in successfully as ${data.user.role}.`)
     navigate(resolvePostAuthPath(data.user.role), { replace: true })
   }
 
   const register = async (payload) => {
     setAuthError('')
-    const data = await authService.register(payload) // { user }
+    const data = await authService.register(payload) // { user, token }
     setSession({ user: data.user })
+    setToken(data.token || '')
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ user: data.user, token: data.token }))
+    } catch {
+      // noop
+    }
     showToast('Account created and logged in successfully.')
     navigate(resolvePostAuthPath(data.user.role), { replace: true })
   }
@@ -70,6 +101,12 @@ export const AuthProvider = ({ children }) => {
     }
 
     setSession(null)
+    setToken('')
+    try {
+      localStorage.removeItem(STORAGE_KEY)
+    } catch {
+      // noop
+    }
     showToast('Logged out successfully.')
     navigate('/', { replace: true })
   }
@@ -83,8 +120,7 @@ export const AuthProvider = ({ children }) => {
 
   const value = {
     session,
-    // cookie auth; token is intentionally not exposed
-    token: '',
+    token,
     user: session?.user ?? null,
     isAuthenticated: Boolean(session?.user),
     authError,

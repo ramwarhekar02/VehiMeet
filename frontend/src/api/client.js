@@ -10,10 +10,22 @@ const buildHeaders = (token, hasJson = true) => {
     headers['Content-Type'] = 'application/json'
   }
 
-  // Bearer token intentionally not used in prod; cookie auth is used instead.
-  // Keeping this block empty to prevent leaking tokens via headers.
+  // If no token provided, try to read from localStorage (legacy STORAGE_KEY)
+  if (!token) {
+    try {
+      const raw = localStorage.getItem('vehimeet-session')
+      if (raw) {
+        const parsed = JSON.parse(raw)
+        token = parsed?.token || token
+      }
+    } catch {
+      // noop
+    }
+  }
+
+  // Add Authorization header if token is available
   if (token) {
-    // no-op
+    headers['Authorization'] = `Bearer ${token}`
   }
 
   return headers

@@ -5,7 +5,7 @@ const { ROLES } = require("../constants/roles");
 const { KYC_STATUS } = require("../constants/statuses");
 const { jwtSecret, adminBootstrapSecret } = require("../config/env");
 const { getCookieOptions } = require("../utils/cookie");
-const { authCookieName, authCookieMaxAgeMs } = require("../config/security");
+const { authCookieName, authCookieMaxAgeMs, refreshCookieName, refreshCookieMaxAgeMs } = require("../config/security");
 const { User, CustomerProfile, PartnerProfile } = require("../models");
 const { createAppId } = require("../utils/id");
 
@@ -21,9 +21,20 @@ const issueToken = (user) =>
       sub: user.id,
       role: user.role,
       email: user.email,
+      type: 'access',
     },
     jwtSecret,
-    { expiresIn: "12h" },
+    { expiresIn: process.env.JWT_EXPIRES_IN || '12h' },
+  );
+
+const issueRefreshToken = (user) =>
+  jwt.sign(
+    {
+      sub: user.id,
+      type: 'refresh',
+    },
+    jwtSecret,
+    { expiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '7d' },
   );
 
 const createRoleProfile = async ({ user, role, now }) => {
@@ -73,6 +84,16 @@ const setAuthCookie = (res, user) => {
   return token;
 };
 
+const setRefreshCookie = (res, user) => {
+  const refreshToken = issueRefreshToken(user);
+  res.cookie(
+    refreshCookieName,
+    refreshToken,
+    getCookieOptions({ maxAgeMs: refreshCookieMaxAgeMs, cookieName: refreshCookieName }),
+  );
+  return refreshToken;
+};
+
 const registerUser = async ({ fullName, email, phone, password, role = ROLES.CUSTOMER }, res) => {
   const existing = await User.findOne({
     $or: [{ email: email.toLowerCase() }, { phone }],
@@ -101,10 +122,13 @@ const registerUser = async ({ fullName, email, phone, password, role = ROLES.CUS
 
   await createRoleProfile({ user, role: normalizedRole, now });
 
-  setAuthCookie(res, user);
+  const token = setAuthCookie(res, user);
+  // set long-lived refresh cookie
+  setRefreshCookie(res, user);
 
   return {
     user: sanitizeUser(user),
+    token,
   };
 };
 
@@ -134,10 +158,12 @@ const registerAdmin = async ({ fullName, email, phone, password, secret }, res) 
     phoneVerified: false,
   });
 
-  setAuthCookie(res, user);
+  const token = setAuthCookie(res, user);
+  setRefreshCookie(res, user);
 
   return {
     user: sanitizeUser(user),
+    token,
   };
 };
 
@@ -147,10 +173,12 @@ const refreshSession = async ({ userId }, res) => {
     throw new ApiError(403, "This account is not active", "ACCOUNT_DISABLED");
   }
 
-  setAuthCookie(res, user);
+  const token = setAuthCookie(res, user);
+  setRefreshCookie(res, user);
 
   return {
     user: sanitizeUser(user),
+    token,
   };
 };
 
@@ -169,10 +197,12 @@ const login = async ({ email, password }, res) => {
     throw new ApiError(403, "This account is not active", "ACCOUNT_DISABLED");
   }
 
-  setAuthCookie(res, user);
+  const token = setAuthCookie(res, user);
+  setRefreshCookie(res, user);
 
   return {
     user: sanitizeUser(user),
+    token,
   };
 };
 
