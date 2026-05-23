@@ -10,23 +10,9 @@ const buildHeaders = (token, hasJson = true) => {
     headers['Content-Type'] = 'application/json'
   }
 
-  // If no token provided, try to read from localStorage (legacy STORAGE_KEY)
-  if (!token) {
-    try {
-      const raw = localStorage.getItem('vehimeet-session')
-      if (raw) {
-        const parsed = JSON.parse(raw)
-        token = parsed?.token || token
-      }
-    } catch {
-      // noop
-    }
-  }
+  // Cookie-based auth uses credentials: 'include' (HttpOnly cookies).
+  // Do not attach Authorization header from browser JS.
 
-  // Add Authorization header if token is available
-  if (token) {
-    headers['Authorization'] = `Bearer ${token}`
-  }
 
   return headers
 }

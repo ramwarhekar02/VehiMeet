@@ -9,29 +9,14 @@ export const AuthProvider = ({ children }) => {
   const location = useLocation()
 
   const [session, setSession] = useState(null) // { user }
-  const [token, setToken] = useState(() => {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY)
-      if (!raw) return ''
-      const parsed = JSON.parse(raw)
-      return parsed?.token || ''
-    } catch {
-      return ''
-    }
-  })
+  // Token is not stored in localStorage. Auth relies on HttpOnly cookies.
+  const [token, setToken] = useState('')
   const [authError, setAuthError] = useState('')
   const [toast, setToast] = useState(null)
 
-  // Restore session from localStorage (JWT-based auth)
+  // Session is restored by backend cookie auth (no localStorage restore)
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY)
-      if (!raw) return
-      const parsed = JSON.parse(raw)
-      if (parsed?.user) setSession({ user: parsed.user })
-    } catch {
-      // noop
-    }
+    setSession(null)
   }, [])
 
   useEffect(() => {
@@ -67,28 +52,19 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (credentials) => {
     setAuthError('')
-    const data = await authService.login(credentials) // { user, token }
+    const data = await authService.login(credentials) // { user }
     setSession({ user: data.user })
-    setToken(data.token || '')
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({ user: data.user, token: data.token }))
-    } catch {
-      // noop
-    }
+    setToken('')
+
     showToast(`Logged in successfully as ${data.user.role}.`)
     navigate(resolvePostAuthPath(data.user.role), { replace: true })
   }
 
   const register = async (payload) => {
     setAuthError('')
-    const data = await authService.register(payload) // { user, token }
+    const data = await authService.register(payload) // { user }
     setSession({ user: data.user })
-    setToken(data.token || '')
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({ user: data.user, token: data.token }))
-    } catch {
-      // noop
-    }
+    setToken('')
     showToast('Account created and logged in successfully.')
     navigate(resolvePostAuthPath(data.user.role), { replace: true })
   }

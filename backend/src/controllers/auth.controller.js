@@ -1,5 +1,5 @@
 const { registerSchema, loginSchema, adminBootstrapSchema } = require("../validations/auth.validation");
-const { registerUser, registerAdmin, login, refreshSession } = require("../services/auth.service");
+const { registerUser, registerAdmin, login, refreshSession } = require("../services/auth.service.secure");
 const { sendSuccess } = require("../utils/response");
 
 const register = async (req, res) => {
