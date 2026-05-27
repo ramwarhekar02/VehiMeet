@@ -90,6 +90,27 @@ export const AuthModal = ({ mode = 'login', onClose, onSwitch }) => {
     </button>
   )
 
+  const GoogleIcon = () => (
+    <svg aria-hidden='true' viewBox='0 0 24 24' className='h-5 w-5'>
+      <path
+        fill='#EA4335'
+        d='M12 10.2v3.9h5.4c-.2 1.3-1.6 3.9-5.4 3.9a6.3 6.3 0 0 1 0-12.6c1.8 0 3 .7 3.7 1.4l2.5-2.4C15.6 1 13.9.2 12 .2 5.4.2.1 5.5.1 12S5.4 23.8 12 23.8c6.9 0 11.4-4.8 11.4-11.6 0-.8-.1-1.4-.2-2H12Z'
+      />
+      <path
+        fill='#34A853'
+        d='M3.5 14.3 0.6 16.6C2.3 20.1 6.8 23.8 12 23.8c3.3 0 6.1-1.1 8.1-3l-3.3-2.6c-.9.6-2.1 1-4.8 1-3.7 0-6.8-2.4-7.9-5.7Z'
+      />
+      <path
+        fill='#4A90E2'
+        d='M0.6 7.4A11.8 11.8 0 0 0 0.1 12c0 1.6.3 3.1.6 4.6l2.9-2.3a7 7 0 0 1-.4-2.3c0-.8.1-1.6.4-2.3L0.6 7.4Z'
+      />
+      <path
+        fill='#FBBC05'
+        d='M12 4.8c2 0 3.3.9 4.1 1.6l3-2.9C17.9 1.8 15.3.2 12 .2 6.8.2 2.3 3.9.6 7.4l3 2.3C4.6 7.2 7.8 4.8 12 4.8Z'
+      />
+    </svg>
+  )
+
   return (
     <div
       className='fixed inset-0 z-50 overflow-y-auto bg-black/70 px-4 py-4 backdrop-blur-sm sm:px-6 sm:py-6'
@@ -158,6 +179,18 @@ export const AuthModal = ({ mode = 'login', onClose, onSwitch }) => {
 
             <form className='mx-auto mt-7 max-w-md space-y-4' onSubmit={handleSubmit}>
               <InlineMessage variant='error' text={authError} />
+              <a
+                className='inline-flex w-full items-center justify-center gap-2 rounded-full border border-neutral-200 bg-white px-5 py-3 text-sm font-semibold text-black transition hover:bg-neutral-50'
+                href={isLogin ? '/api/auth/google/start' : `/api/auth/google/start?role=${encodeURIComponent(registerForm.role)}`}
+              >
+                <GoogleIcon />
+                <span>{isLogin ? 'Continue with Google' : 'Sign up with Google'}</span>
+              </a>
+              <div className='flex items-center gap-3 text-xs text-neutral-400'>
+                <div className='h-px flex-1 bg-neutral-200' />
+                <span>{isLogin ? 'or continue with email' : 'or sign up with email'}</span>
+                <div className='h-px flex-1 bg-neutral-200' />
+              </div>
 
               {isLogin ? (
                 <>

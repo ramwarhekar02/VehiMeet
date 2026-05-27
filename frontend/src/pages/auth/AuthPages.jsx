@@ -20,6 +20,34 @@ const AuthFormShell = ({ title, subtitle, children }) => (
   </div>
 )
 
+const GoogleIcon = () => (
+  <svg aria-hidden='true' viewBox='0 0 24 24' className='h-5 w-5'>
+    <path
+      fill='#EA4335'
+      d='M12 10.2v3.9h5.4c-.2 1.3-1.6 3.9-5.4 3.9a6.3 6.3 0 0 1 0-12.6c1.8 0 3 .7 3.7 1.4l2.5-2.4C15.6 1 13.9.2 12 .2 5.4.2.1 5.5.1 12S5.4 23.8 12 23.8c6.9 0 11.4-4.8 11.4-11.6 0-.8-.1-1.4-.2-2H12Z'
+    />
+    <path
+      fill='#34A853'
+      d='M3.5 14.3 0.6 16.6C2.3 20.1 6.8 23.8 12 23.8c3.3 0 6.1-1.1 8.1-3l-3.3-2.6c-.9.6-2.1 1-4.8 1-3.7 0-6.8-2.4-7.9-5.7Z'
+    />
+    <path
+      fill='#4A90E2'
+      d='M0.6 7.4A11.8 11.8 0 0 0 0.1 12c0 1.6.3 3.1.6 4.6l2.9-2.3a7 7 0 0 1-.4-2.3c0-.8.1-1.6.4-2.3L0.6 7.4Z'
+    />
+    <path
+      fill='#FBBC05'
+      d='M12 4.8c2 0 3.3.9 4.1 1.6l3-2.9C17.9 1.8 15.3.2 12 .2 6.8.2 2.3 3.9.6 7.4l3 2.3C4.6 7.2 7.8 4.8 12 4.8Z'
+    />
+  </svg>
+)
+
+const OAuthButton = ({ href, children }) => (
+  <a className='button-secondary inline-flex w-full items-center justify-center gap-2 text-center' href={href}>
+    <GoogleIcon />
+    <span>{children}</span>
+  </a>
+)
+
 const EyeIcon = ({ closed = false }) => (
   <svg
     aria-hidden='true'
@@ -90,9 +118,7 @@ export const LoginPage = () => {
   return (
     <AuthFormShell title='Login to role-based dashboards' subtitle='JWT-backed login with customer, partner, and admin paths.'>
       <InlineMessage variant='error' text={authError} />
-      <a className='button-secondary block w-full text-center' href='/api/auth/google/start'>
-        Continue with Google
-      </a>
+      <OAuthButton href='/api/auth/google/start'>Continue with Google</OAuthButton>
       <div className='flex items-center gap-3 text-xs text-slate-500'>
         <div className='h-px flex-1 bg-slate-800' />
         <span>or continue with email</span>
@@ -145,9 +171,7 @@ export const RegisterPage = () => {
   return (
     <AuthFormShell title='Create an account' subtitle='Customer and partner registration with role-specific profile bootstrap.'>
       <InlineMessage variant='error' text={authError} />
-      <a className='button-secondary block w-full text-center' href={`/api/auth/google/start?role=${encodeURIComponent(form.role)}`}>
-        Sign up with Google
-      </a>
+      <OAuthButton href={`/api/auth/google/start?role=${encodeURIComponent(form.role)}`}>Sign up with Google</OAuthButton>
       <div className='flex items-center gap-3 text-xs text-slate-500'>
         <div className='h-px flex-1 bg-slate-800' />
         <span>or sign up with email</span>
