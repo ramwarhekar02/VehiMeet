@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useAuth } from '../../contexts/useAuth'
 import { createEmptyLoginForm, createEmptyRegisterForm } from '../../validations/auth.validation'
 import { InlineMessage } from './InlineMessage'
+import { API_BASE_URL } from '../../api/client'
 
 export const AuthModal = ({ mode = 'login', onClose, onSwitch }) => {
   const isLogin = mode === 'login'
@@ -181,7 +182,11 @@ export const AuthModal = ({ mode = 'login', onClose, onSwitch }) => {
               <InlineMessage variant='error' text={authError} />
               <a
                 className='inline-flex w-full items-center justify-center gap-2 rounded-full border border-neutral-200 bg-white px-5 py-3 text-sm font-semibold text-black transition hover:bg-neutral-50'
-                href={isLogin ? '/api/auth/google/start' : `/api/auth/google/start?role=${encodeURIComponent(registerForm.role)}`}
+                href={
+                  isLogin
+                    ? `${API_BASE_URL}/auth/google/start`
+                    : `${API_BASE_URL}/auth/google/start?role=${encodeURIComponent(registerForm.role)}`
+                }
               >
                 <GoogleIcon />
                 <span>{isLogin ? 'Continue with Google' : 'Sign up with Google'}</span>
