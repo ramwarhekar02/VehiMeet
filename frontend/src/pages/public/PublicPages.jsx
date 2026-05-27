@@ -52,7 +52,7 @@ export const HomePage = () => {
               A modern mobility experience for riders, drivers, and admins. Pick a route, compare verified rides, and track every trip live without visual clutter.
             </p>
             <div className='mt-7 flex flex-wrap gap-3'>
-              <Link className='button-primary min-h-12 px-6' to='/vehicles'>Explore rides</Link>
+              <Link className='button-primary min-h-12 px-6' to='/dashboard/bookings'>Explore rides</Link>
               <Link className='button-secondary min-h-12 px-6' to='/?auth=signup'>Create account</Link>
             </div>
             <div className='mt-8 grid max-w-2xl gap-3 sm:grid-cols-3'>
