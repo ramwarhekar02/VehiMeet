@@ -1,5 +1,14 @@
-const { registerSchema, loginSchema, adminBootstrapSchema } = require("../validations/auth.validation");
-const { registerUser, registerAdmin, login, refreshSession, toSessionUser } = require("../services/auth.service");
+const { registerSchema, loginSchema, adminBootstrapSchema, googleLoginSchema } = require("../validations/auth.validation");
+const {
+  registerUser,
+  registerAdmin,
+  login,
+  googleLogin,
+  startGoogleRedirectLogin,
+  finishGoogleRedirectLogin,
+  refreshSession,
+  toSessionUser,
+} = require("../services/auth.service");
 const { authCookieName, refreshCookieName } = require("../config/security");
 const { clearCookieOptions } = require("../utils/cookie");
 const { sendSuccess } = require("../utils/response");
@@ -22,6 +31,23 @@ const signIn = async (req, res) => {
   return sendSuccess(res, { message: "Login successful", data: null });
 };
 
+const signInWithGoogle = async (req, res) => {
+  const payload = googleLoginSchema.parse(req.body);
+  await googleLogin(payload, res);
+  return sendSuccess(res, { message: "Login successful", data: null });
+};
+
+const startGoogleRedirect = async (req, res) => {
+  const role = String(req.query?.role || "");
+  const url = await startGoogleRedirectLogin({ role }, res);
+  return res.redirect(url);
+};
+
+const googleRedirectCallback = async (req, res) => {
+  const redirectTo = await finishGoogleRedirectLogin({ query: req.query }, res);
+  return res.redirect(redirectTo);
+};
+
 const logout = async (_req, res) => {
   res.clearCookie(authCookieName, clearCookieOptions());
   res.clearCookie(refreshCookieName, clearCookieOptions());
@@ -42,4 +68,14 @@ const refresh = async (req, res) => {
 
 const me = async (req, res) => sendSuccess(res, { message: "Session active", data: toSessionUser(req.user) });
 
-module.exports = { register, bootstrapAdmin, signIn, logout, refresh, me };
+module.exports = {
+  register,
+  bootstrapAdmin,
+  signIn,
+  signInWithGoogle,
+  startGoogleRedirect,
+  googleRedirectCallback,
+  logout,
+  refresh,
+  me,
+};

@@ -89,8 +89,16 @@ export const LoginPage = () => {
 
   return (
     <AuthFormShell title='Login to role-based dashboards' subtitle='JWT-backed login with customer, partner, and admin paths.'>
+      <InlineMessage variant='error' text={authError} />
+      <a className='button-secondary block w-full text-center' href='/api/auth/google/start'>
+        Continue with Google
+      </a>
+      <div className='flex items-center gap-3 text-xs text-slate-500'>
+        <div className='h-px flex-1 bg-slate-800' />
+        <span>or continue with email</span>
+        <div className='h-px flex-1 bg-slate-800' />
+      </div>
       <form className='space-y-4' onSubmit={handleSubmit}>
-        <InlineMessage variant='error' text={authError} />
         <input className='input-shell' autoComplete='email' placeholder='Email address' value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
         <PasswordField
           className='input-shell'
@@ -136,8 +144,16 @@ export const RegisterPage = () => {
 
   return (
     <AuthFormShell title='Create an account' subtitle='Customer and partner registration with role-specific profile bootstrap.'>
+      <InlineMessage variant='error' text={authError} />
+      <a className='button-secondary block w-full text-center' href={`/api/auth/google/start?role=${encodeURIComponent(form.role)}`}>
+        Sign up with Google
+      </a>
+      <div className='flex items-center gap-3 text-xs text-slate-500'>
+        <div className='h-px flex-1 bg-slate-800' />
+        <span>or sign up with email</span>
+        <div className='h-px flex-1 bg-slate-800' />
+      </div>
       <form className='space-y-4' onSubmit={handleSubmit}>
-        <InlineMessage variant='error' text={authError} />
         <select className='input-shell' value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value })}>
           <option value='customer'>Customer account</option>
           <option value='partner'>Partner account</option>

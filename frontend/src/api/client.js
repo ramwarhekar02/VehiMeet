@@ -1,4 +1,6 @@
-export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api'
+// Note: Any `VITE_*` env var is embedded into the frontend build output.
+// Prefer leaving `VITE_API_BASE_URL` empty and use same-origin `/api` behind a reverse proxy in production.
+export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api'
 export const SOCKET_BASE_URL =
   import.meta.env.VITE_SOCKET_BASE_URL || API_BASE_URL.replace(/\/api\/?$/, '')
 export const SESSION_EXPIRED_EVENT = 'vehimeet:session-expired'

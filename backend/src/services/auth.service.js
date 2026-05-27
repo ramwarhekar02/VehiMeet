@@ -1,10 +1,12 @@
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const { OAuth2Client } = require("google-auth-library");
+const crypto = require("crypto");
 const { ApiError } = require("../utils/ApiError");
 const { ROLES } = require("../constants/roles");
 const { KYC_STATUS } = require("../constants/statuses");
-const { jwtSecret, adminBootstrapSecret } = require("../config/env");
-const { getCookieOptions } = require("../utils/cookie");
+const { jwtSecret, adminBootstrapSecret, googleClientId, googleClientSecret, googleRedirectUri, clientOrigin } = require("../config/env");
+const { getCookieOptions, clearCookieOptions } = require("../utils/cookie");
 const { authCookieName, authCookieMaxAgeMs, refreshCookieName, refreshCookieMaxAgeMs } = require("../config/security");
 const { User, CustomerProfile, PartnerProfile } = require("../models");
 const { createAppId } = require("../utils/id");
@@ -19,6 +21,8 @@ const toSessionUser = (user) => ({
   id: user.id,
   role: user.role,
   fullName: user.fullName,
+  email: user.email,
+  avatarUrl: user.avatarUrl || "",
 });
 
 const issueToken = (user) =>
@@ -188,6 +192,10 @@ const login = async ({ email, password }, res) => {
     throw new ApiError(401, "Invalid email or password", "INVALID_CREDENTIALS");
   }
 
+  if (!user.passwordHash) {
+    throw new ApiError(401, "Use Google login for this account", "PASSWORD_LOGIN_DISABLED");
+  }
+
   const isValid = await bcrypt.compare(password, user.passwordHash);
   if (!isValid) {
     throw new ApiError(401, "Invalid email or password", "INVALID_CREDENTIALS");
@@ -205,6 +213,192 @@ const login = async ({ email, password }, res) => {
   };
 };
 
+const googleOAuthClient = googleClientId ? new OAuth2Client(googleClientId) : null;
+
+const googleLogin = async ({ credential, role }, res) => {
+  if (!googleOAuthClient) {
+    throw new ApiError(500, "Google login is not configured on the server", "GOOGLE_OAUTH_NOT_CONFIGURED");
+  }
+
+  let payload;
+  try {
+    const ticket = await googleOAuthClient.verifyIdToken({
+      idToken: credential,
+      audience: googleClientId,
+    });
+    payload = ticket.getPayload();
+  } catch {
+    throw new ApiError(401, "Invalid Google credential", "GOOGLE_INVALID_CREDENTIAL");
+  }
+
+  const email = (payload?.email || "").toLowerCase();
+  const googleSub = payload?.sub || "";
+  if (!email || !googleSub) {
+    throw new ApiError(401, "Invalid Google credential", "GOOGLE_INVALID_CREDENTIAL");
+  }
+
+  const now = new Date();
+  const normalizedRole = role === ROLES.PARTNER ? ROLES.PARTNER : ROLES.CUSTOMER;
+
+  let user =
+    (await User.findOne({ googleSub })) ||
+    (await User.findOne({ email }));
+
+  if (user) {
+    if (user.isBlocked || !user.isActive) {
+      throw new ApiError(403, "This account is not active", "ACCOUNT_DISABLED");
+    }
+
+    const updates = {};
+    if (!user.googleSub) updates.googleSub = googleSub;
+    if (!user.fullName && payload?.name) updates.fullName = payload.name;
+    if ((!user.avatarUrl || user.avatarUrl === "") && payload?.picture) updates.avatarUrl = payload.picture;
+    if (payload?.email_verified === true) updates.emailVerified = true;
+
+    if (Object.keys(updates).length > 0) {
+      updates.updatedAt = now;
+      user = await User.findByIdAndUpdate(user._id, { $set: updates }, { new: true });
+    }
+
+    setAuthCookie(res, user);
+    setRefreshCookie(res, user);
+
+    return { user: toSessionUser(user) };
+  }
+
+  // Create new user via Google sign-in.
+  const createdUser = await User.create({
+    _id: createAppId(normalizedRole === ROLES.PARTNER ? "usr_partner" : "usr_customer"),
+    role: normalizedRole,
+    fullName: payload?.name || "User",
+    email,
+    phone: undefined,
+    passwordHash: undefined,
+    googleSub,
+    avatarUrl: payload?.picture || "",
+    isActive: true,
+    isBlocked: false,
+    emailVerified: payload?.email_verified === true,
+    phoneVerified: false,
+    createdAt: now,
+    updatedAt: now,
+  });
+
+  await createRoleProfile({ user: createdUser, role: normalizedRole, now });
+
+  setAuthCookie(res, createdUser);
+  setRefreshCookie(res, createdUser);
+
+  return { user: toSessionUser(createdUser) };
+};
+
+const oauthStateCookieName = "vehimeet_oauth_state";
+const oauthCodeVerifierCookieName = "vehimeet_oauth_code_verifier";
+const oauthRoleCookieName = "vehimeet_oauth_role";
+const oauthCookieMaxAgeMs = 10 * 60 * 1000; // 10 minutes
+
+const base64Url = (input) =>
+  Buffer.from(input)
+    .toString("base64")
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
+    .replace(/=+$/g, "");
+
+const sha256Base64Url = (value) => base64Url(crypto.createHash("sha256").update(value).digest());
+
+const getGoogleRedirectClient = () => {
+  if (!googleClientId || !googleClientSecret || !googleRedirectUri) return null;
+  return new OAuth2Client({
+    clientId: googleClientId,
+    clientSecret: googleClientSecret,
+    redirectUri: googleRedirectUri,
+  });
+};
+
+const setOAuthCookie = (res, name, value) => {
+  res.cookie(
+    name,
+    value,
+    getCookieOptions({
+      maxAgeMs: oauthCookieMaxAgeMs,
+      cookieName: name,
+    }),
+  );
+};
+
+const clearOAuthCookies = (res) => {
+  res.clearCookie(oauthStateCookieName, clearCookieOptions());
+  res.clearCookie(oauthCodeVerifierCookieName, clearCookieOptions());
+  res.clearCookie(oauthRoleCookieName, clearCookieOptions());
+};
+
+const startGoogleRedirectLogin = async ({ role }, res) => {
+  const oauthClient = getGoogleRedirectClient();
+  if (!oauthClient) {
+    throw new ApiError(500, "Google redirect login is not configured on the server", "GOOGLE_OAUTH_NOT_CONFIGURED");
+  }
+
+  const state = base64Url(crypto.randomBytes(32));
+  const codeVerifier = base64Url(crypto.randomBytes(64));
+  const codeChallenge = sha256Base64Url(codeVerifier);
+
+  setOAuthCookie(res, oauthStateCookieName, state);
+  setOAuthCookie(res, oauthCodeVerifierCookieName, codeVerifier);
+
+  const normalizedRole = role === ROLES.PARTNER ? ROLES.PARTNER : ROLES.CUSTOMER;
+  setOAuthCookie(res, oauthRoleCookieName, normalizedRole);
+
+  const url = oauthClient.generateAuthUrl({
+    scope: ["openid", "email", "profile"],
+    response_type: "code",
+    prompt: "select_account",
+    state,
+    code_challenge: codeChallenge,
+    code_challenge_method: "S256",
+  });
+
+  return url;
+};
+
+const finishGoogleRedirectLogin = async ({ query }, res) => {
+  const oauthClient = getGoogleRedirectClient();
+  if (!oauthClient) {
+    throw new ApiError(500, "Google redirect login is not configured on the server", "GOOGLE_OAUTH_NOT_CONFIGURED");
+  }
+
+  const code = String(query?.code || "");
+  const state = String(query?.state || "");
+  const storedState = String(res.req?.cookies?.[oauthStateCookieName] || "");
+  const codeVerifier = String(res.req?.cookies?.[oauthCodeVerifierCookieName] || "");
+  const role = String(res.req?.cookies?.[oauthRoleCookieName] || "");
+
+  clearOAuthCookies(res);
+
+  if (!code || !state || !storedState || state !== storedState || !codeVerifier) {
+    throw new ApiError(401, "Invalid Google OAuth session", "GOOGLE_OAUTH_SESSION_INVALID");
+  }
+
+  let tokens;
+  try {
+    const tokenResponse = await oauthClient.getToken({
+      code,
+      codeVerifier,
+    });
+    tokens = tokenResponse.tokens;
+  } catch {
+    throw new ApiError(401, "Google OAuth exchange failed", "GOOGLE_OAUTH_EXCHANGE_FAILED");
+  }
+
+  const idToken = tokens?.id_token || "";
+  if (!idToken) {
+    throw new ApiError(401, "Google OAuth exchange failed", "GOOGLE_OAUTH_EXCHANGE_FAILED");
+  }
+
+  await googleLogin({ credential: idToken, role: role || undefined }, res);
+
+  return `${clientOrigin}/`;
+};
+
 module.exports = {
   sanitizeUser,
   toSessionUser,
@@ -213,4 +407,7 @@ module.exports = {
   registerAdmin,
   refreshSession,
   login,
+  googleLogin,
+  startGoogleRedirectLogin,
+  finishGoogleRedirectLogin,
 };

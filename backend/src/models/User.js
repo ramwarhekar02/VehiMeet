@@ -25,14 +25,21 @@ const userSchema = new mongoose.Schema(
     },
     phone: {
       type: String,
-      required: true,
+      required: false,
       unique: true,
+      sparse: true,
       trim: true,
       index: true,
     },
     passwordHash: {
       type: String,
-      required: true,
+      required: false,
+    },
+    googleSub: {
+      type: String,
+      unique: true,
+      sparse: true,
+      index: true,
     },
     avatarUrl: {
       type: String,

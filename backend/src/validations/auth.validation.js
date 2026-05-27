@@ -17,4 +17,9 @@ const adminBootstrapSchema = registerSchema.omit({ role: true }).extend({
   secret: z.string().min(1),
 });
 
-module.exports = { registerSchema, loginSchema, adminBootstrapSchema };
+const googleLoginSchema = z.object({
+  credential: z.string().min(10),
+  role: z.enum(["customer", "partner"]).optional(),
+});
+
+module.exports = { registerSchema, loginSchema, adminBootstrapSchema, googleLoginSchema };
